@@ -70,10 +70,18 @@ try {
     Write-Info "Downloading $asset ($tag)"
     Invoke-WebRequest -UseBasicParsing -Uri "$releaseUrl/$asset" -OutFile $zipPath
 
-    # --- verify checksum (best effort) ---
+    # --- verify checksum ---
+    # Downloading checksums.txt is best-effort (a network error only warns), but a
+    # checksum *mismatch* is always fatal — never install a tampered binary.
+    $sumsPath = Join-Path $tmp 'checksums.txt'
+    $haveSums = $false
     try {
-        $sumsPath = Join-Path $tmp 'checksums.txt'
         Invoke-WebRequest -UseBasicParsing -Uri "$releaseUrl/checksums.txt" -OutFile $sumsPath
+        $haveSums = $true
+    } catch {
+        Write-Warning "Could not download checksums.txt; skipping verification: $($_.Exception.Message)"
+    }
+    if ($haveSums) {
         $line = Select-String -Path $sumsPath -Pattern ([regex]::Escape($asset)) | Select-Object -First 1
         if ($line) {
             $expected = ($line.Line -split '\s+')[0]
@@ -82,9 +90,9 @@ try {
                 throw "Checksum mismatch for $asset (expected $expected, got $actual)"
             }
             Write-Info 'Checksum verified'
+        } else {
+            Write-Warning "No checksum entry for $asset; skipping verification."
         }
-    } catch {
-        Write-Warning "Could not verify checksum: $($_.Exception.Message)"
     }
 
     # --- extract ---

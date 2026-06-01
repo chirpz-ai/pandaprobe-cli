@@ -124,8 +124,10 @@ case ":${PATH}:" in
 	*)
 		printf '\n'
 		warn "${install_dir} is not on your PATH."
+		# The literal $PATH is intentional — it's shell syntax for the user to copy.
+		# shellcheck disable=SC2016
 		printf 'Add it by appending this line to your shell profile:\n\n    export PATH="%s:$PATH"\n\n' "$install_dir"
 		;;
 esac
 
-printf 'Run `pandaprobe --help` to get started.\n'
+printf 'Run: pandaprobe --help\n'
