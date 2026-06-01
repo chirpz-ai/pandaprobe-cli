@@ -1,0 +1,13 @@
+# Binaries
+/pandaprobe
+/dist/
+
+# Test / coverage artifacts
+coverage.out
+*.test
+*.out
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
