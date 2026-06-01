@@ -1,0 +1,31 @@
+version: "2"
+
+linters:
+  enable:
+    - revive
+    - gocritic
+    - misspell
+    - unconvert
+  settings:
+    revive:
+      rules:
+        # Enum const blocks and the well-known APIError name are intentional;
+        # the exported-comment/stutter checks add noise without value here.
+        - name: exported
+          disabled: true
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gocritic
+          - revive
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/chirpz-ai/pandaprobe-cli
