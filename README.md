@@ -26,16 +26,42 @@ as much as by humans:
 
 ## Install
 
+### macOS / Linux
+
 ```bash
-# from source
+curl -fsSL https://cli.pandaprobe.com/install.sh | sh
+```
+
+### Windows (PowerShell)
+
+```powershell
+irm https://cli.pandaprobe.com/install.ps1 | iex
+```
+
+The installers download the prebuilt binary for your OS/arch from the latest
+GitHub release, verify its checksum, and place `pandaprobe` on your PATH. Pin a
+version or change the location with environment variables:
+
+```bash
+PANDAPROBE_VERSION=v0.2.0 PANDAPROBE_INSTALL_DIR="$HOME/.local/bin" \
+  curl -fsSL https://cli.pandaprobe.com/install.sh | sh
+```
+
+> Until the `cli.pandaprobe.com` vanity host is live, the same scripts work
+> directly from the repo, e.g.
+> `curl -fsSL https://raw.githubusercontent.com/chirpz-ai/pandaprobe-cli/main/scripts/install.sh | sh`.
+
+### From source
+
+```bash
 go install github.com/chirpz-ai/pandaprobe-cli@latest   # installs the `pandaprobe` binary
 
 # or build locally
 make build && ./pandaprobe version
 ```
 
-Release archives for Linux, macOS and Windows (amd64/arm64) are published on the
-GitHub releases page.
+Prebuilt archives for Linux, macOS and Windows (amd64/arm64) are also attached to
+each [GitHub release](https://github.com/chirpz-ai/pandaprobe-cli/releases).
 
 ## Quick start
 
