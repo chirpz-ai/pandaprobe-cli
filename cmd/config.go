@@ -24,6 +24,7 @@ var configKeyFlag = map[string]string{
 	config.KeyAPIKey:      "api-key",
 	config.KeyProjectName: "project",
 	config.KeyEndpoint:    "endpoint",
+	config.KeyAuthURL:     "auth-url",
 	config.KeyFormat:      "format",
 }
 
@@ -92,7 +93,7 @@ func newConfigShowCmd() *cobra.Command {
 			app := appFrom(cmd)
 			path, _ := configPath(cmd)
 
-			keys := []string{config.KeyAPIKey, config.KeyProjectName, config.KeyEndpoint, config.KeyFormat, config.KeyTimeout}
+			keys := []string{config.KeyAPIKey, config.KeyProjectName, config.KeyEndpoint, config.KeyAuthURL, config.KeyFormat, config.KeyTimeout}
 			if app.writer.Format() == output.FormatTable {
 				m := map[string]string{"config_file": path}
 				for _, k := range keys {
@@ -151,6 +152,8 @@ func resolvedValue(app *appContext, key string) (string, bool) {
 		return app.cfg.ProjectName, true
 	case config.KeyEndpoint:
 		return app.cfg.Endpoint, true
+	case config.KeyAuthURL:
+		return app.cfg.AuthURL, true
 	case config.KeyFormat:
 		return app.cfg.Format, true
 	case config.KeyTimeout:
