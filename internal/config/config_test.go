@@ -141,3 +141,36 @@ func TestSetValueRoundTrip(t *testing.T) {
 	assert.Error(t, SetValue(path, "bogus", "x"))
 	assert.Error(t, SetValue(path, KeyFormat, "xml"))
 }
+
+func TestUnsetValue(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+
+	require.NoError(t, SetValue(path, KeyAPIKey, "sk_pp_x"))
+	require.NoError(t, SetValue(path, KeyProjectName, "proj"))
+	require.NoError(t, SetValue(path, KeyEndpoint, "https://e.example.com"))
+
+	require.NoError(t, UnsetValue(path, KeyAPIKey, KeyProjectName))
+
+	v := viper.New()
+	v.SetConfigFile(path)
+	require.NoError(t, v.ReadInConfig())
+	assert.Empty(t, v.GetString(KeyAPIKey))
+	assert.Empty(t, v.GetString(KeyProjectName))
+	// Untouched keys survive.
+	assert.Equal(t, "https://e.example.com", v.GetString(KeyEndpoint))
+
+	info, err := os.Stat(path)
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0o600), info.Mode().Perm())
+
+	// Missing file is a no-op, not an error.
+	assert.NoError(t, UnsetValue(filepath.Join(dir, "nope.yaml"), KeyAPIKey))
+}
+
+func TestAuthURLDefault(t *testing.T) {
+	v, _ := newBoundViper(t, "")
+	cfg, err := Load(v)
+	require.NoError(t, err)
+	assert.Equal(t, DefaultAuthURL, cfg.AuthURL)
+}

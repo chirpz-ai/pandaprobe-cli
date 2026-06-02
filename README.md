@@ -26,16 +26,42 @@ as much as by humans:
 
 ## Install
 
+### macOS / Linux
+
 ```bash
-# from source
+curl -fsSL https://cli.pandaprobe.com/install.sh | sh
+```
+
+### Windows (PowerShell)
+
+```powershell
+irm https://cli.pandaprobe.com/install.ps1 | iex
+```
+
+The installers download the prebuilt binary for your OS/arch from the latest
+GitHub release, verify its checksum, and place `pandaprobe` on your PATH. Pin a
+version or change the location with environment variables:
+
+```bash
+PANDAPROBE_VERSION=v0.2.0 PANDAPROBE_INSTALL_DIR="$HOME/.local/bin" \
+  curl -fsSL https://cli.pandaprobe.com/install.sh | sh
+```
+
+> Until the `cli.pandaprobe.com` vanity host is live, the same scripts work
+> directly from the repo, e.g.
+> `curl -fsSL https://raw.githubusercontent.com/chirpz-ai/pandaprobe-cli/main/scripts/install.sh | sh`.
+
+### From source
+
+```bash
 go install github.com/chirpz-ai/pandaprobe-cli@latest   # installs the `pandaprobe` binary
 
 # or build locally
 make build && ./pandaprobe version
 ```
 
-Release archives for Linux, macOS and Windows (amd64/arm64) are published on the
-GitHub releases page.
+Prebuilt archives for Linux, macOS and Windows (amd64/arm64) are also attached to
+each [GitHub release](https://github.com/chirpz-ai/pandaprobe-cli/releases).
 
 ## Quick start
 
@@ -54,6 +80,39 @@ pandaprobe traces get <trace_id> | jq '.spans[] | {name, kind, status}'
 pandaprobe evals scores submit --trace-id <trace_id> --name accuracy --value 0.92
 ```
 
+## Authentication
+
+There are two ways to authenticate, depending on where PandaProbe runs.
+
+### Cloud — `pandaprobe auth login` (recommended)
+
+```bash
+pandaprobe auth login
+```
+
+Opens your browser, authenticates you against PandaProbe Cloud, mints a **90-day
+API key**, and writes `api_key` + `project_name` into `~/.pandaprobe/config.yaml`
+automatically — no manual copy/paste. It uses a hardened OAuth 2.0
+Authorization-Code + PKCE flow: the raw key never travels through the browser,
+only a single-use code does, which the CLI exchanges directly over HTTPS.
+
+```bash
+pandaprobe auth login --no-browser     # print the URL instead of opening a browser (SSH/headless)
+pandaprobe auth status                 # show whether you're logged in (key masked)
+pandaprobe auth logout                 # remove stored credentials locally
+```
+
+### Local / self-hosted — manual config
+
+When running PandaProbe core locally with auth disabled, skip `auth login` and set
+values directly:
+
+```bash
+pandaprobe config set endpoint http://localhost:8000
+pandaprobe config set project_name my-local-project
+# api_key may be a placeholder if local auth is disabled
+```
+
 ## Configuration
 
 Resolution precedence (highest to lowest):
@@ -68,8 +127,12 @@ Resolution precedence (highest to lowest):
 | API key       | `--api-key`   | `PANDAPROBE_API_KEY`      | `api_key`      | —                            |
 | Project name  | `--project`   | `PANDAPROBE_PROJECT_NAME` | `project_name` | —                            |
 | Endpoint      | `--endpoint`  | `PANDAPROBE_ENDPOINT`     | `endpoint`     | `https://api.pandaprobe.com` |
+| Auth web URL  | `--auth-url`  | `PANDAPROBE_AUTH_URL`     | `auth_url`     | `https://app.pandaprobe.com` |
 | Output format | `--format`    | `PANDAPROBE_FORMAT`       | `format`       | `json`                       |
 | Timeout (s)   | —             | `PANDAPROBE_TIMEOUT`      | `timeout`      | `30`                         |
+
+`auth_url` is the PandaProbe web app used by `pandaprobe auth login`; `endpoint`
+is the REST API.
 
 Authentication uses the `X-API-Key` and `X-Project-Name` headers.
 
@@ -85,6 +148,7 @@ pandaprobe config path              # config file location and whether it exists
 --api-key string     PandaProbe API key
 --project string     PandaProbe project name
 --endpoint string    API endpoint URL
+--auth-url string    PandaProbe web app URL (used by `auth login`)
 --format string      Output format: json (default) or table
 --config string      Path to config file (default ~/.pandaprobe/config.yaml)
 --verbose            Log request/response summaries to stderr
@@ -120,6 +184,14 @@ Error shape (written to stderr):
 ```
 
 ## Command reference
+
+### Auth
+
+```
+pandaprobe auth login   [--no-browser] [--timeout 3m]
+pandaprobe auth status
+pandaprobe auth logout
+```
 
 ### Traces
 

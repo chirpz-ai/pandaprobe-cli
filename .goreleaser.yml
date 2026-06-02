@@ -55,3 +55,9 @@ release:
   github:
     owner: chirpz-ai
     name: pandaprobe-cli
+  # Attach the install scripts to every release so they have a stable download
+  # URL that the curl/irm one-liners (and the cli.pandaprobe.com vanity host)
+  # can point at.
+  extra_files:
+    - glob: ./scripts/install.sh
+    - glob: ./scripts/install.ps1

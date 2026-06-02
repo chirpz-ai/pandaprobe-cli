@@ -22,6 +22,7 @@ const (
 	KeyAPIKey      = "api_key"
 	KeyProjectName = "project_name"
 	KeyEndpoint    = "endpoint"
+	KeyAuthURL     = "auth_url"
 	KeyFormat      = "format"
 	KeyTimeout     = "timeout"
 )
@@ -33,18 +34,20 @@ const EnvPrefix = "PANDAPROBE"
 // Defaults.
 const (
 	DefaultEndpoint = "https://api.pandaprobe.com"
+	DefaultAuthURL  = "https://app.pandaprobe.com"
 	DefaultFormat   = "json"
 	DefaultTimeout  = 30 * time.Second
 )
 
 // SettableKeys are the keys accepted by `config set` / `config get`.
-var SettableKeys = []string{KeyAPIKey, KeyProjectName, KeyEndpoint, KeyFormat}
+var SettableKeys = []string{KeyAPIKey, KeyProjectName, KeyEndpoint, KeyAuthURL, KeyFormat}
 
 // Config is the fully resolved runtime configuration.
 type Config struct {
 	APIKey      string
 	ProjectName string
 	Endpoint    string
+	AuthURL     string
 	Format      string
 	Timeout     time.Duration
 
@@ -93,6 +96,7 @@ func NewViper(cfgFile string) (*viper.Viper, error) {
 	v.AutomaticEnv()
 
 	v.SetDefault(KeyEndpoint, DefaultEndpoint)
+	v.SetDefault(KeyAuthURL, DefaultAuthURL)
 	v.SetDefault(KeyFormat, DefaultFormat)
 	v.SetDefault(KeyTimeout, int(DefaultTimeout.Seconds()))
 
@@ -127,6 +131,7 @@ func Load(v *viper.Viper) (*Config, error) {
 		APIKey:      v.GetString(KeyAPIKey),
 		ProjectName: v.GetString(KeyProjectName),
 		Endpoint:    v.GetString(KeyEndpoint),
+		AuthURL:     v.GetString(KeyAuthURL),
 		Format:      v.GetString(KeyFormat),
 	}
 
@@ -217,6 +222,42 @@ func SetValue(path, key, value string) error {
 	}
 	v.Set(key, value)
 	if err := v.WriteConfigAs(path); err != nil {
+		return exitcode.New(exitcode.General, "write config file %q: %v", path, err)
+	}
+	if err := os.Chmod(path, 0o600); err != nil {
+		return exitcode.New(exitcode.General, "secure config file %q: %v", path, err)
+	}
+	return nil
+}
+
+// UnsetValue removes one or more keys from the config file at path. It is a
+// no-op if the file does not exist. Used by `auth logout` to clear credentials.
+func UnsetValue(path string, keys ...string) error {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return exitcode.New(exitcode.General, "stat config file %q: %v", path, err)
+	}
+
+	// Viper has no delete, so rebuild the file from the surviving keys.
+	v := viper.New()
+	v.SetConfigFile(path)
+	if err := v.ReadInConfig(); err != nil {
+		return exitcode.New(exitcode.Validation, "read config file %q: %v", path, err)
+	}
+	drop := make(map[string]bool, len(keys))
+	for _, k := range keys {
+		drop[k] = true
+	}
+	out := viper.New()
+	out.SetConfigFile(path)
+	for _, k := range v.AllKeys() {
+		if !drop[k] {
+			out.Set(k, v.Get(k))
+		}
+	}
+	if err := out.WriteConfigAs(path); err != nil {
 		return exitcode.New(exitcode.General, "write config file %q: %v", path, err)
 	}
 	if err := os.Chmod(path, 0o600); err != nil {

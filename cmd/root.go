@@ -52,6 +52,7 @@ func newRootCmd(app *appContext) *cobra.Command {
 	pf.String("api-key", "", "PandaProbe API key (env PANDAPROBE_API_KEY)")
 	pf.String("project", "", "PandaProbe project name (env PANDAPROBE_PROJECT_NAME)")
 	pf.String("endpoint", "", "API endpoint URL (env PANDAPROBE_ENDPOINT)")
+	pf.String("auth-url", "", "PandaProbe web app URL for `auth login` (env PANDAPROBE_AUTH_URL)")
 	pf.String("format", "", "Output format: json or table (default json)")
 	pf.String("config", "", "Path to config file (default ~/.pandaprobe/config.yaml)")
 	pf.Bool("verbose", false, "Log request/response summaries to stderr")
@@ -66,6 +67,7 @@ func newRootCmd(app *appContext) *cobra.Command {
 		newVersionCmd(),
 		newCompletionCmd(),
 		newConfigCmd(),
+		newAuthCmd(),
 		newTracesCmd(),
 		newSessionsCmd(),
 		newEvalsCmd(),
@@ -91,6 +93,9 @@ func setupApp(cmd *cobra.Command, app *appContext) error {
 		return err
 	}
 	if err := bind(config.KeyEndpoint, "endpoint"); err != nil {
+		return err
+	}
+	if err := bind(config.KeyAuthURL, "auth-url"); err != nil {
 		return err
 	}
 	if err := bind(config.KeyFormat, "format"); err != nil {
