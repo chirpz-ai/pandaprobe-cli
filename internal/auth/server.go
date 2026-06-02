@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"fmt"
+	"html"
 	"net"
 	"net/http"
 )
@@ -97,7 +98,7 @@ func (cs *callbackServer) deliver(res callbackResult) {
 func (cs *callbackServer) fail(w http.ResponseWriter, msg string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusBadRequest)
-	_, _ = fmt.Fprintf(w, failPage, msg)
+	_, _ = fmt.Fprintf(w, failPage, html.EscapeString(msg))
 }
 
 // wait blocks until the callback fires or ctx is cancelled (timeout/interrupt).
