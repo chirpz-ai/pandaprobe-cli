@@ -50,9 +50,7 @@ func (cs *callbackServer) start() {
 }
 
 func (cs *callbackServer) shutdown() {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	_ = cs.srv.Shutdown(ctx)
+	_ = cs.srv.Close()
 }
 
 func (cs *callbackServer) handleCallback(w http.ResponseWriter, r *http.Request) {
