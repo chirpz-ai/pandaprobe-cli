@@ -15,12 +15,12 @@ const (
 func newEvalsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "evals",
-		Short: "Manage evaluations: metrics, runs and scores",
+		Short: "Manage evaluations: metrics, runs, scores and monitors",
 		Long:  "Evaluation commands operate on either traces or sessions. Use --target to choose\n(default: trace). Some operations are trace-only and will error for --target session.",
 	}
 	// --target is shared by every evals subcommand.
 	cmd.PersistentFlags().String("target", targetTrace, "Evaluation target: trace or session")
-	cmd.AddCommand(newEvalsMetricsCmd(), newEvalsRunsCmd(), newEvalsScoresCmd())
+	cmd.AddCommand(newEvalsMetricsCmd(), newEvalsRunsCmd(), newEvalsScoresCmd(), newEvalsMonitorsCmd())
 	return cmd
 }
 
