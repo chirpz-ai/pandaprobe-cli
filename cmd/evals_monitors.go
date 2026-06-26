@@ -211,7 +211,8 @@ func newEvalsMonitorsUpdateCmd() *cobra.Command {
 			}
 			if f := cmd.Flags().Lookup("filters"); f != nil && f.Changed {
 				raw, _ := cmd.Flags().GetString("filters")
-				if !json.Valid([]byte(raw)) {
+				var obj map[string]any
+				if err := json.Unmarshal([]byte(raw), &obj); err != nil {
 					return exitcode.New(exitcode.Validation, "invalid --filters: must be a JSON object")
 				}
 				body.Filters = json.RawMessage(raw)

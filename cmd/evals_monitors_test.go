@@ -203,6 +203,41 @@ func TestMonitorsUpdateRejectsBadCadence(t *testing.T) {
 	assert.Contains(t, errOut, "cadence")
 }
 
+func TestMonitorsUpdateSendsValidFiltersObject(t *testing.T) {
+	var body []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		buf := new(bytes.Buffer)
+		_, _ = buf.ReadFrom(r.Body)
+		body = buf.Bytes()
+		_, _ = w.Write([]byte(monitorResp))
+	}))
+	defer srv.Close()
+	withAuthEnv(t, srv)
+
+	out, errOut, code := runCLI(t, "evals", "monitors", "update", "mon1", "--filters", `{"status":"COMPLETED"}`)
+	require.Equal(t, exitcode.OK, code, "stderr=%s", errOut)
+	assert.Contains(t, string(body), `"filters":{"status":"COMPLETED"}`)
+	assert.Contains(t, out, `"id": "mon1"`)
+}
+
+func TestMonitorsUpdateRejectsNonObjectFilters(t *testing.T) {
+	// Valid JSON that is not an object (array, string, number, bool) must be
+	// rejected client-side and never reach the API.
+	for _, bad := range []string{`[1,2,3]`, `"oops"`, `42`, `true`} {
+		t.Run(bad, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				t.Error("no request expected")
+			}))
+			defer srv.Close()
+			withAuthEnv(t, srv)
+
+			_, errOut, code := runCLI(t, "evals", "monitors", "update", "mon1", "--filters", bad)
+			assert.Equal(t, exitcode.Validation, code)
+			assert.Contains(t, errOut, "filters")
+		})
+	}
+}
+
 func TestMonitorsPauseResumePaths(t *testing.T) {
 	var path string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
