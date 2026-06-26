@@ -99,6 +99,22 @@ func EvaluationStatusValues() []string {
 // Valid reports whether s is a known evaluation status.
 func (s EvaluationStatus) Valid() bool { return contains(EvaluationStatusValues(), string(s)) }
 
+// MonitorStatus is the lifecycle state of an evaluation monitor.
+type MonitorStatus string
+
+const (
+	MonitorStatusActive MonitorStatus = "ACTIVE"
+	MonitorStatusPaused MonitorStatus = "PAUSED"
+)
+
+// MonitorStatusValues lists the valid monitor statuses.
+func MonitorStatusValues() []string {
+	return []string{"ACTIVE", "PAUSED"}
+}
+
+// Valid reports whether s is a known monitor status.
+func (s MonitorStatus) Valid() bool { return contains(MonitorStatusValues(), string(s)) }
+
 // ScoreStatus is the status of an individual score.
 type ScoreStatus string
 
