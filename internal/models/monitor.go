@@ -40,14 +40,16 @@ type CreateMonitorRequest struct {
 }
 
 // UpdateMonitorRequest is the body for PATCH /evaluations/monitors/{id}. Every
-// field is optional; only the fields the user changed are sent.
+// field is optional; only the fields the user changed are sent. Filters and
+// SignalWeights are raw JSON so an explicit null is forwarded verbatim (the API
+// treats null as "reset"), which a nil map/struct could not express.
 type UpdateMonitorRequest struct {
-	Name          *string            `json:"name,omitempty"`
-	Metrics       []string           `json:"metrics,omitempty"`
-	Filters       json.RawMessage    `json:"filters,omitempty"`
-	SamplingRate  *float64           `json:"sampling_rate,omitempty"`
-	Model         *string            `json:"model,omitempty"`
-	Cadence       *string            `json:"cadence,omitempty"`
-	OnlyIfChanged *bool              `json:"only_if_changed,omitempty"`
-	SignalWeights map[string]float64 `json:"signal_weights,omitempty"`
+	Name          *string         `json:"name,omitempty"`
+	Metrics       []string        `json:"metrics,omitempty"`
+	Filters       json.RawMessage `json:"filters,omitempty"`
+	SamplingRate  *float64        `json:"sampling_rate,omitempty"`
+	Model         *string         `json:"model,omitempty"`
+	Cadence       *string         `json:"cadence,omitempty"`
+	OnlyIfChanged *bool           `json:"only_if_changed,omitempty"`
+	SignalWeights json.RawMessage `json:"signal_weights,omitempty"`
 }

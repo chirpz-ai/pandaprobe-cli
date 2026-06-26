@@ -217,11 +217,16 @@ func newEvalsMonitorsUpdateCmd() *cobra.Command {
 				}
 				body.Filters = json.RawMessage(raw)
 			}
-			weights, err := signalWeights(cmd)
-			if err != nil {
-				return err
+			if f := cmd.Flags().Lookup("signal-weights"); f != nil && f.Changed {
+				raw, _ := cmd.Flags().GetString("signal-weights")
+				// Accept a JSON object of name->number, or null to reset to
+				// defaults; forward it verbatim so explicit null is preserved.
+				var m map[string]float64
+				if err := json.Unmarshal([]byte(raw), &m); err != nil {
+					return exitcode.New(exitcode.Validation, "invalid --signal-weights: must be a JSON object of name->number, or null to reset: %v", err)
+				}
+				body.SignalWeights = json.RawMessage(raw)
 			}
-			body.SignalWeights = weights
 
 			res, err := app.client.UpdateMonitor(cmd.Context(), args[0], body)
 			if err != nil {

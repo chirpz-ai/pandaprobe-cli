@@ -188,6 +188,7 @@ func TestMonitorsUpdateSendsOnlyChangedFields(t *testing.T) {
 	assert.Contains(t, string(body), `"name":"renamed"`)
 	assert.NotContains(t, string(body), `"cadence"`)
 	assert.NotContains(t, string(body), `"sampling_rate"`)
+	assert.NotContains(t, string(body), `"signal_weights"`)
 	assert.Contains(t, out, `"id": "mon1"`)
 }
 
@@ -234,6 +235,58 @@ func TestMonitorsUpdateRejectsNonObjectFilters(t *testing.T) {
 			_, errOut, code := runCLI(t, "evals", "monitors", "update", "mon1", "--filters", bad)
 			assert.Equal(t, exitcode.Validation, code)
 			assert.Contains(t, errOut, "filters")
+		})
+	}
+}
+
+func TestMonitorsUpdateForwardsNullSignalWeights(t *testing.T) {
+	// Explicit null must reach the API (resets weights to defaults), unlike an
+	// unset flag which is omitted from the PATCH body.
+	var body []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		buf := new(bytes.Buffer)
+		_, _ = buf.ReadFrom(r.Body)
+		body = buf.Bytes()
+		_, _ = w.Write([]byte(monitorResp))
+	}))
+	defer srv.Close()
+	withAuthEnv(t, srv)
+
+	out, errOut, code := runCLI(t, "evals", "monitors", "update", "mon1", "--signal-weights", "null")
+	require.Equal(t, exitcode.OK, code, "stderr=%s", errOut)
+	assert.Contains(t, string(body), `"signal_weights":null`)
+	assert.Contains(t, out, `"id": "mon1"`)
+}
+
+func TestMonitorsUpdateForwardsSignalWeightsObject(t *testing.T) {
+	var body []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		buf := new(bytes.Buffer)
+		_, _ = buf.ReadFrom(r.Body)
+		body = buf.Bytes()
+		_, _ = w.Write([]byte(monitorResp))
+	}))
+	defer srv.Close()
+	withAuthEnv(t, srv)
+
+	out, errOut, code := runCLI(t, "evals", "monitors", "update", "mon1", "--signal-weights", `{"confidence":1.5}`)
+	require.Equal(t, exitcode.OK, code, "stderr=%s", errOut)
+	assert.Contains(t, string(body), `"signal_weights":{"confidence":1.5}`)
+	assert.Contains(t, out, `"id": "mon1"`)
+}
+
+func TestMonitorsUpdateRejectsNonObjectSignalWeights(t *testing.T) {
+	for _, bad := range []string{`[1,2,3]`, `"oops"`, `42`} {
+		t.Run(bad, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				t.Error("no request expected")
+			}))
+			defer srv.Close()
+			withAuthEnv(t, srv)
+
+			_, errOut, code := runCLI(t, "evals", "monitors", "update", "mon1", "--signal-weights", bad)
+			assert.Equal(t, exitcode.Validation, code)
+			assert.Contains(t, errOut, "signal-weights")
 		})
 	}
 }
