@@ -238,7 +238,25 @@ pandaprobe evals scores list   [--name --source --status --eval-run-id --date-fr
 pandaprobe evals scores get    <trace_id|session_id>
 pandaprobe evals scores submit --trace-id … --name … --value …
                                [--data-type --source --reason --metadata]   # trace target only
+
+pandaprobe evals monitors create   --name … --metrics m1,m2 --cadence daily|weekly|every_6h|cron:<expr>
+                                   [--model --sampling-rate --only-if-changed]
+                                   # same per-target filter flags as `evals runs create`
+                                   # --signal-weights (session target only)
+pandaprobe evals monitors list     [--status ACTIVE|PAUSED --limit --offset]
+pandaprobe evals monitors get      <monitor_id>
+pandaprobe evals monitors update   <monitor_id> [--name --metrics --cadence --model
+                                   --sampling-rate --only-if-changed --filters '<json>' --signal-weights]
+pandaprobe evals monitors delete   <monitor_id>
+pandaprobe evals monitors pause    <monitor_id>
+pandaprobe evals monitors resume   <monitor_id>
+pandaprobe evals monitors runs     <monitor_id> [--limit --offset]
+pandaprobe evals monitors trigger  <monitor_id>   # immediate run (server rate-limited)
 ```
+
+Monitors schedule recurring evaluation runs. Like other `evals` commands, `create`
+derives the monitor's target from `--target trace|session` (uppercased to `TRACE`/`SESSION`
+on the wire). `delete` prints a `{"status":"deleted","id":"<id>"}` confirmation object.
 
 Score submission is **trace-only**: `--target session` on `scores submit` returns a
 validation error, because the backend exposes no session-score write endpoint.
