@@ -39,6 +39,8 @@ func (w *Writer) renderTable(v any) error {
 		return w.traceScoreTable(t.Items, &t.Pagination)
 	case models.ListResult[models.SessionScoreResponse]:
 		return w.sessionScoreTable(t.Items, &t.Pagination)
+	case models.ListResult[models.MonitorResponse]:
+		return w.monitorListTable(t.Items, &t.Pagination)
 	case []models.SpanResponse:
 		return w.spanTable(t)
 	case []models.MetricSummary:
@@ -55,6 +57,8 @@ func (w *Writer) renderTable(v any) error {
 		return w.sessionDetail(t)
 	case *models.EvalRunResponse:
 		return w.evalRunDetail(t)
+	case *models.MonitorResponse:
+		return w.monitorDetail(t)
 	case *models.TraceScoreResponse:
 		return w.kvTable(traceScoreRows(*t))
 	case version.Info:
@@ -322,6 +326,44 @@ func (w *Writer) evalRunDetail(r *models.EvalRunResponse) error {
 		{"created_at", r.CreatedAt},
 		{"completed_at", deref(r.CompletedAt)},
 		{"error_message", deref(r.ErrorMessage)},
+	})
+}
+
+func (w *Writer) monitorListTable(monitors []models.MonitorResponse, p *models.Pagination) error {
+	rows := make([][]string, 0, len(monitors))
+	for _, m := range monitors {
+		rows = append(rows, []string{
+			m.ID,
+			truncate(m.Name, 30),
+			m.TargetType,
+			w.statusCell(string(m.Status)),
+			m.Cadence,
+			deref(m.NextRunAt),
+			deref(m.LastRunAt),
+		})
+	}
+	if err := w.rowTable([]string{"ID", "NAME", "TARGET", "STATUS", "CADENCE", "NEXT_RUN", "LAST_RUN"}, rows); err != nil {
+		return err
+	}
+	return w.footer(p)
+}
+
+func (w *Writer) monitorDetail(m *models.MonitorResponse) error {
+	return w.kvTable([][2]string{
+		{"id", m.ID},
+		{"name", m.Name},
+		{"status", w.statusCell(string(m.Status))},
+		{"target_type", m.TargetType},
+		{"metrics", strings.Join(m.MetricNames, ",")},
+		{"cadence", m.Cadence},
+		{"sampling_rate", strconv.FormatFloat(m.SamplingRate, 'f', -1, 64)},
+		{"only_if_changed", strconv.FormatBool(m.OnlyIfChanged)},
+		{"model", deref(m.Model)},
+		{"next_run_at", deref(m.NextRunAt)},
+		{"last_run_at", deref(m.LastRunAt)},
+		{"last_run_id", deref(m.LastRunID)},
+		{"created_at", m.CreatedAt},
+		{"updated_at", m.UpdatedAt},
 	})
 }
 
